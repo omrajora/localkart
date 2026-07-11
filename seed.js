@@ -32,16 +32,16 @@ const run = async () => {
   }
 
   // Create a demo admin account too - admins are never created via the public register form for security
-  let admin = await User.findOne({ email: "admin@localkart.com" });
+  let admin = await User.findOne({ email: "omrajora671@gmail.com" });
   if (!admin) {
-    const hashedAdminPassword = await bcrypt.hash("admin123", 10);
+    const hashedAdminPassword = await bcrypt.hash("om123", 10);
     admin = await User.create({
-      name: "Demo Admin",
-      email: "admin@localkart.com",
+      name: "Admin",
+      email: "omrajora671@gmail.com",
       password: hashedAdminPassword,
       role: "admin"
     });
-    console.log("Demo admin created -> email: admin@localkart.com / password: admin123");
+    console.log("Demo admin created -> email: omrajora671@gmail.com / password: om123");
   }
 
   // Real-world coordinates around MG Road, Bengaluru so the map shows real nearby distances
