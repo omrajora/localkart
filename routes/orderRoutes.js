@@ -69,8 +69,7 @@ router.get("/vendor", authorize("vendor", "admin"), async (req, res) => {
   try {
     const Shop = require("../models/Shop");
     const myShops = await Shop.find({ owner: req.user._id }).select("_id");
-    const shopIds = myShops.map((s) => s.toString());
-
+   const shopIds = myShops.map((s) => s._id);
     const Product = require("../models/Product");
     const myProducts = await Product.find({ shop: { $in: shopIds } }).select("_id");
     const myProductIds = myProducts.map((p) => p._id.toString());

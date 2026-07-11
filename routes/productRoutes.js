@@ -12,7 +12,7 @@ router.get("/", async (req, res) => {
     if (req.query.category && req.query.category !== "All") {
       filter.category = req.query.category;
     }
-    const products = await Product.find(filter).populate("shop", "name location address");
+    const products = await Product.find(filter).populate("shop", "name address");
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
