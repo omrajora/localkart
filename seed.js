@@ -19,17 +19,6 @@ const run = async () => {
   await Product.deleteMany({});
 
   // Create a demo vendor account to own the seeded shops (or reuse if it already exists)
-  let vendor = await User.findOne({ email: "vendor@localkart.com" });
-  if (!vendor) {
-    const hashedPassword = await bcrypt.hash("vendor123", 10);
-    vendor = await User.create({
-      name: "Demo Vendor",
-      email: "vendor@localkart.com",
-      password: hashedPassword,
-      role: "vendor"
-    });
-    console.log("Demo vendor created -> email: vendor@localkart.com / password: vendor123");
-  }
 
   // Create a demo admin account too - admins are never created via the public register form for security
   let admin = await User.findOne({ email: "omrajora671@gmail.com" });
