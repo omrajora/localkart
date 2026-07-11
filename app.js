@@ -1125,7 +1125,6 @@ function AuthPage() {
       <div class="layout">
         <div>
           <h2>${isLogin ? "Login" : "Create your account"}</h2>
-          <p class="lead">Real JWT authentication backed by MongoDB. Your token is stored locally and sent with every request.</p>
           <div class="upload-row">
             <button class="ghost-button" onclick="quickLogin('vendor@localkart.com','vendor123')">Login as Vendor</button>
             <button class="ghost-button" onclick="quickLogin('admin@localkart.com','admin123')">Login as Admin</button>
