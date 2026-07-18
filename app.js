@@ -736,7 +736,7 @@ function CustomerPage() {
           ${filteredProducts().length === 0 ? `
             <div class="card checkout-box">
               <h3>No products match</h3>
-              <p class="muted">Try a different category, search term, or radius. Or run <code>node seed.js</code> if the catalog is empty.</p>
+           
             </div>
           ` : filteredProducts().map((product) => `
             <article class="card product-card">
