@@ -680,7 +680,7 @@ function CustomerPage() {
       ${nearby.length === 0 ? `
         <div class="card checkout-box">
           <h3>No shops yet</h3>
-          <p class="muted">Run <code>node seed.js</code> in your backend folder to add demo shops, or register a shop from the Vendor dashboard.</p>
+       
         </div>
       ` : `
         <div class="grid">
@@ -736,8 +736,7 @@ function CustomerPage() {
           ${filteredProducts().length === 0 ? `
             <div class="card checkout-box">
               <h3>No products match</h3>
-           
-            </div>
+           </div>
           ` : filteredProducts().map((product) => `
             <article class="card product-card">
               <div class="product-image">${imageTag(product.image, product.letter)}</div>
