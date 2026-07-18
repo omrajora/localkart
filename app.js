@@ -680,7 +680,7 @@ function CustomerPage() {
       ${nearby.length === 0 ? `
         <div class="card checkout-box">
           <h3>No shops yet</h3>
-       
+          <p class="muted">There are currently no vendors available near your location</p>
         </div>
       ` : `
         <div class="grid">
@@ -736,7 +736,8 @@ function CustomerPage() {
           ${filteredProducts().length === 0 ? `
             <div class="card checkout-box">
               <h3>No products match</h3>
-           </div>
+
+            </div>
           ` : filteredProducts().map((product) => `
             <article class="card product-card">
               <div class="product-image">${imageTag(product.image, product.letter)}</div>
