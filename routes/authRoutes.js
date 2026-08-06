@@ -8,7 +8,17 @@ const router = express.Router();
 
 const registerValidation = [
   body("name").trim().notEmpty().withMessage("Name is required"),
-  body("email").isEmail().withMessage("Valid email is required").normalizeEmail(),
+ body("email")
+  .isEmail().withMessage("Valid email is required")
+  .normalizeEmail()
+  .custom((value) => {
+    const domain = value.split("@")[1];
+    const validDomains = ["gmail.com","yahoo.com","outlook.com","hotmail.com","icloud.com","rediffmail.com","protonmail.com","yahoo.in","live.com"];
+    if (!validDomains.includes(domain)) {
+      throw new Error("Please use a valid email (Gmail, Yahoo, Outlook etc.)");
+    }
+    return true;
+  }),
   body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
   body("role").optional().isIn(["customer", "vendor", "delivery", "admin"]).withMessage("Invalid role")
 ];

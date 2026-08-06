@@ -26,13 +26,11 @@ let state = {
   userLocation: null,
   token: localStorage.getItem("lk_token") || null,
   user: JSON.parse(localStorage.getItem("lk_user") || "null"),
-  // vendor panel state
   myShops: [],
   myProducts: [],
   vendorOrders: [],
   vendorTab: "orders",
   deliveryData: null,
-  // admin panel state
   adminTab: "users",
   adminUsers: [],
   adminShops: [],
@@ -52,9 +50,7 @@ function isLoggedIn() {
 async function api(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (state.token) headers.Authorization = `Bearer ${state.token}`;
-
   const response = await fetch(`${API_BASE}/api${path}`, { headers, ...options });
-
   if (!response.ok) {
     let message = "Request failed";
     try {
@@ -65,12 +61,10 @@ async function api(path, options = {}) {
     }
     throw new Error(message);
   }
-
   if (response.status === 204) return null;
   return response.json();
 }
 
-// For real file uploads - do NOT set Content-Type, the browser sets the multipart boundary
 async function apiUpload(path, formData) {
   const headers = {};
   if (state.token) headers.Authorization = `Bearer ${state.token}`;
@@ -90,7 +84,6 @@ function requestLocation() {
       render();
     },
     () => {
-      // user denied or unavailable - fall back to MG Road, Bengaluru so the map still works
       state.userLocation = { lat: 12.9756, lng: 77.6094 };
       render();
     },
@@ -104,8 +97,7 @@ function distanceKm(a, b) {
   const R = 6371;
   const dLat = toRad(b.lat - a.lat);
   const dLng = toRad(b.lng - a.lng);
-  const x =
-    Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
   return Math.round(R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)) * 10) / 10;
 }
 
@@ -123,11 +115,9 @@ async function loadData() {
   try {
     state.loading = true;
     render();
-
     const [shops, products] = await Promise.all([api("/shops"), api("/products")]);
     state.shops = shops;
     state.products = products;
-
     if (isLoggedIn()) {
       const [cart, latestOrder, dashboard, myOrders] = await Promise.all([
         api("/cart"),
@@ -139,7 +129,6 @@ async function loadData() {
       state.latestOrder = latestOrder;
       state.dashboard = dashboard;
       state.myOrders = myOrders;
-
       if (state.user.role === "vendor" || state.user.role === "admin") {
         const [myShops, myProducts, vendorOrders] = await Promise.all([
           api("/shops/mine"),
@@ -150,16 +139,13 @@ async function loadData() {
         state.myProducts = myProducts;
         state.vendorOrders = vendorOrders;
       }
-
       if (state.user.role === "delivery" || state.user.role === "admin") {
         state.deliveryData = await api("/orders/delivery");
       }
-
       if (state.user.role === "admin") {
         await loadAdminData();
       }
     }
-
     state.loading = false;
     state.error = "";
   } catch (error) {
@@ -201,12 +187,17 @@ function setPage(page) {
 }
 
 function RoleGate(requiredRole, pageBuilder) {
-  if (state.user?.role !== requiredRole && state.user?.role !== "admin") {
+  if (!state.user) {
+    state.page = "auth";
+    render();
+    return "";
+  }
+  if (state.user.role !== requiredRole && state.user.role !== "admin") {
     return `
       <section class="section">
         <div class="card checkout-box">
           <h2>${requiredRole.charAt(0).toUpperCase() + requiredRole.slice(1)} access only</h2>
-          <p class="muted">Your account role is <strong>${state.user?.role}</strong>. Login with a ${requiredRole} account to see this dashboard.</p>
+          <p class="muted">Tumhara account role <strong>${state.user.role}</strong> hai. ${requiredRole} account se login karo.</p>
           <button class="primary-button" onclick="logout(); setPage('auth');">Switch Account</button>
         </div>
       </section>
@@ -215,45 +206,35 @@ function RoleGate(requiredRole, pageBuilder) {
   return pageBuilder();
 }
 
-function setCategory(category) {
-  state.category = category;
-  render();
-}
+function setCategory(category) { state.category = category; render(); }
 
 function setSearch(value) {
   state.search = value;
   render();
   const input = document.querySelector("#search-input");
-  if (input) {
-    input.focus();
-    input.setSelectionRange(input.value.length, input.value.length);
-  }
+  if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 
-function setRadius(value) {
-  state.radius = value;
-  render();
-}
+function setRadius(value) { state.radius = value; render(); }
+function setAuthMode(mode) { state.authMode = mode; state.authError = ""; render(); }
+function setAuthRole(role) { state.authRole = role; render(); }
+function setVendorTab(tab) { state.vendorTab = tab; render(); }
+function setAdminTab(tab) { state.adminTab = tab; render(); }
 
-function setAuthMode(mode) {
-  state.authMode = mode;
+function loginAs(role) {
+  state.authRole = role;
+  state.authMode = "login";
   state.authError = "";
   render();
+  setTimeout(() => { document.querySelector("#email")?.focus(); }, 100);
 }
 
-function setAuthRole(role) {
-  state.authRole = role;
-  render();
-}
-
-function setVendorTab(tab) {
-  state.vendorTab = tab;
-  render();
-}
-
-function setAdminTab(tab) {
-  state.adminTab = tab;
-  render();
+function showForgotPassword() {
+  const email = document.querySelector("#email")?.value || "";
+  alert(email
+    ? `Password reset link bheja jayega ${email} pe.\nAbhi ke liye admin se contact karo: support@localkart.in`
+    : "Pehle apna email daalo, phir Forgot Password click karo."
+  );
 }
 
 async function handleRegister(event) {
@@ -272,16 +253,6 @@ async function handleRegister(event) {
     onAuthSuccess(data);
   } catch (error) {
     state.authError = error.message;
-    render();
-  }
-}
-
-async function quickLogin(email, password) {
-  try {
-    const data = await api("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
-    onAuthSuccess(data);
-  } catch (error) {
-    state.authError = error.message + " (run node seed.js on the backend first to create demo accounts)";
     render();
   }
 }
@@ -356,13 +327,11 @@ async function placeOrder() {
 
   try {
     const orderData = await api("/payment/create-order", { method: "POST", body: JSON.stringify({ amount: total }) });
-
     if (typeof Razorpay === "undefined") {
       state.error = "Razorpay checkout script did not load. Check your internet connection.";
       render();
       return;
     }
-
     const rzp = new Razorpay({
       key: orderData.keyId,
       amount: orderData.amount,
@@ -381,9 +350,7 @@ async function placeOrder() {
             })
           });
           await finalizeOrder({
-            address,
-            paymentMethod,
-            paymentStatus: "paid",
+            address, paymentMethod, paymentStatus: "paid",
             razorpayOrderId: response.razorpay_order_id,
             razorpayPaymentId: response.razorpay_payment_id
           });
@@ -394,7 +361,6 @@ async function placeOrder() {
       },
       theme: { color: "#1f7a4d" }
     });
-
     rzp.open();
   } catch (error) {
     state.error = error.message + " (Add Razorpay test keys in .env to enable online payment, or choose Cash on Delivery.)";
@@ -437,7 +403,6 @@ async function updateOrderStatus(orderId, status) {
   }
 }
 
-// ---- Vendor actions ----
 async function createShop(event) {
   event.preventDefault();
   const form = event.target;
@@ -524,7 +489,6 @@ async function updateProductStock(id, stock) {
   }
 }
 
-// ---- Admin actions ----
 async function adminChangeRole(userId, role) {
   try {
     await api(`/admin/users/${userId}/role`, { method: "PATCH", body: JSON.stringify({ role }) });
@@ -574,12 +538,10 @@ async function adminDeleteProduct(productId) {
 
 function filteredProducts() {
   let list = state.category === "All" ? state.products : state.products.filter((p) => p.category === state.category);
-
   if (state.search.trim()) {
     const q = state.search.trim().toLowerCase();
     list = list.filter((p) => p.name.toLowerCase().includes(q) || p.shop?.name?.toLowerCase().includes(q));
   }
-
   if (state.radius !== "all" && state.userLocation) {
     const maxKm = Number(state.radius);
     list = list.filter((p) => {
@@ -589,33 +551,24 @@ function filteredProducts() {
       return d === null || d <= maxKm;
     });
   }
-
   return list;
 }
 
-function imageTag(url, letter, gradientClass) {
+function imageTag(url, letter) {
   if (url) return `<img src="${url}" alt="${letter}" loading="lazy">`;
-  return `<span class="${gradientClass || ""}" style="display:grid;place-items:center;width:100%;height:100%;">${letter}</span>`;
+  return `<span style="display:grid;place-items:center;width:100%;height:100%;">${letter}</span>`;
 }
 
 function Header() {
   const pages = [
-    ["customer", "Customer"],
-    ["cart", "Cart"],
-    ["tracking", "Tracking"],
-    ["vendor", "Vendor"],
-    ["delivery", "Delivery"],
-    ["admin", "Admin"]
+    ["customer", "Customer"], ["cart", "Cart"], ["tracking", "Tracking"],
+    ["vendor", "Vendor"], ["delivery", "Delivery"], ["admin", "Admin"]
   ];
-
   return `
     <header class="topbar">
       <div class="brand">
         <div class="brand-mark">LK</div>
-        <div>
-          <strong>Local Kart</strong>
-
-        </div>
+        <div><strong>Local Kart</strong></div>
       </div>
       <nav class="nav" aria-label="Main navigation">
         ${pages.map(([key, label]) => `<button class="${state.page === key ? "active" : ""}" onclick="setPage('${key}')">${label}</button>`).join("")}
@@ -631,7 +584,7 @@ function Header() {
 
 function LoadingOrError() {
   if (state.loading) {
-    return `<section class="section"><div class="card checkout-box"><h2>Loading Local Kart</h2><p class="muted">Connecting to backend APIs...</p></div></section>`;
+    return `<section class="section"><div class="card checkout-box"><h2>Loading Local Kart</h2><p class="muted">Connecting to backend...</p></div></section>`;
   }
   if (state.error) {
     return `
@@ -639,7 +592,6 @@ function LoadingOrError() {
         <div class="card checkout-box">
           <h2>Something went wrong</h2>
           <p class="muted">${state.error}</p>
-          <p class="muted">Run <strong>node server.js</strong> inside the Local Kart folder, then open http://localhost:3000.</p>
           <button class="primary-button" onclick="state.error=''; loadData();">Retry</button>
         </div>
       </section>
@@ -670,18 +622,12 @@ function CustomerPage() {
     ${Hero()}
     <section class="section">
       <div class="section-head">
-        <div>
-          <h2>Nearby Shops</h2>
-          <p>Location-based discovery with real distance, shown live on the map below.</p>
-        </div>
+        <div><h2>Nearby Shops</h2><p>Location-based discovery with real distance.</p></div>
         <button class="ghost-button" onclick="setPage('tracking')">Track Latest Order</button>
       </div>
       <div id="shops-map" class="map-container"></div>
       ${nearby.length === 0 ? `
-        <div class="card checkout-box">
-          <h3>No shops yet</h3>
-          <p class="muted">There are currently no vendors available near your location</p>
-        </div>
+        <div class="card checkout-box"><h3>No shops yet</h3><p class="muted">There are currently no vendors available near your location.</p></div>
       ` : `
         <div class="grid">
           ${nearby.map((shop) => `
@@ -701,11 +647,7 @@ function CustomerPage() {
       `}
     </section>
     <section class="section">
-      <div class="section-head">
-        <div>
-          <h2>Product Catalog</h2>
-        </div>
-      </div>
+      <div class="section-head"><div><h2>Product Catalog</h2></div></div>
       <div class="filters">
         ${categories.map((category) => `<button class="${state.category === category ? "active" : ""}" onclick="setCategory('${category}')">${category}</button>`).join("")}
       </div>
@@ -713,7 +655,6 @@ function CustomerPage() {
         <aside class="sidebar">
           <label for="search-input">Search products</label>
           <input id="search-input" class="field" placeholder="Milk, medicine, bread" value="${state.search}" oninput="setSearch(this.value)">
-
           <label for="radius">Delivery radius</label>
           <select id="radius" class="field" onchange="setRadius(this.value)">
             <option value="all" ${state.radius === "all" ? "selected" : ""}>Any distance</option>
@@ -721,30 +662,19 @@ function CustomerPage() {
             <option value="5" ${state.radius === "5" ? "selected" : ""}>Within 5 km</option>
             <option value="10" ${state.radius === "10" ? "selected" : ""}>Within 10 km</option>
           </select>
-          ${!state.userLocation ? `<p class="muted">Allow location access to filter by real distance.</p>` : ""}
-
           <label for="payment">Preferred payment</label>
           <select id="payment" class="field">
-            <option>UPI</option>
-            <option>Cash on Delivery</option>
-            <option>Debit Card</option>
-            <option>Credit Card</option>
+            <option>UPI</option><option>Cash on Delivery</option><option>Debit Card</option><option>Credit Card</option>
           </select>
           <button class="primary-button" onclick="setPage('cart')">Go to Cart</button>
         </aside>
         <div class="grid">
           ${filteredProducts().length === 0 ? `
-            <div class="card checkout-box">
-              <h3>No products match</h3>
-
-            </div>
+            <div class="card checkout-box"><h3>No products match</h3><p class="muted">Try a different category or search term.</p></div>
           ` : filteredProducts().map((product) => `
             <article class="card product-card">
               <div class="product-image">${imageTag(product.image, product.letter)}</div>
-              <div>
-                <strong>${product.name}</strong>
-                <span>${product.shop?.name || ""}</span>
-              </div>
+              <div><strong>${product.name}</strong><span>${product.shop?.name || ""}</span></div>
               <div class="card-row">
                 <strong>${money(product.price)}</strong>
                 <span class="pill">${product.stock} left</span>
@@ -763,7 +693,6 @@ function CartPage() {
   const delivery = subtotal > 300 || subtotal === 0 ? 0 : 35;
   const taxes = Math.round(subtotal * 0.05);
   const total = subtotal + delivery + taxes;
-
   return `
     <section class="section">
       <div class="section-head">
@@ -789,16 +718,14 @@ function CartPage() {
           <p class="muted">${state.cart.length} item${state.cart.length === 1 ? "" : "s"}</p>
           <div class="total-row"><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
           <div class="total-row"><span>Delivery</span><strong>${delivery === 0 ? "Free" : money(delivery)}</strong></div>
-          <div class="total-row"><span>Taxes</span><strong>${money(taxes)}</strong></div>
+          <div class="total-row"><span>Taxes (5%)</span><strong>${money(taxes)}</strong></div>
           <hr>
           <div class="total-row"><span>Total</span><strong>${money(total)}</strong></div>
           <label for="address">Delivery address</label>
-          <input id="address" class="field" value="MG Road, Bengaluru">
+          <input id="address" class="field" placeholder="Enter your full address">
           <label for="pay-now">Payment method</label>
           <select id="pay-now" class="field">
-            <option>UPI</option>
-            <option>Cash on Delivery</option>
-            <option>Debit Card</option>
+            <option>UPI</option><option>Cash on Delivery</option><option>Debit Card</option>
           </select>
           <button class="primary-button" onclick="placeOrder()" ${state.cart.length === 0 ? "disabled" : ""}>Place Order</button>
         </aside>
@@ -816,7 +743,7 @@ function TrackingPage() {
   return `
     <section class="section">
       <div class="section-head">
-        <div><h2>Real-Time Order Tracking</h2><p>Order <strong>#${order._id.slice(-6)}</strong>, distance ${order.distanceKm ?? "N/A"} km.</p></div>
+        <div><h2>Real-Time Order Tracking</h2><p>Order <strong>#${order._id.slice(-6)}</strong></p></div>
         <span class="pill">ETA ${order.eta}</span>
       </div>
       <div class="order-panel">
@@ -824,7 +751,7 @@ function TrackingPage() {
           ${orderSteps.map((step, index) => `
             <div class="step ${index < activeIndex ? "done" : ""} ${index === activeIndex ? "active" : ""}">
               <strong>${step}</strong>
-              <p class="muted">${index === activeIndex ? `Order is currently ${step.toLowerCase()}.` : "Status updated successfully."}</p>
+              <p class="muted">${index === activeIndex ? `Order is currently ${step.toLowerCase()}.` : "Completed."}</p>
             </div>
           `).join("")}
         </div>
@@ -832,7 +759,7 @@ function TrackingPage() {
           <h3>Delivery Details</h3>
           <p><strong>${order.deliveryPartner}</strong></p>
           <p class="muted">Delivering to ${order.address}.</p>
-          <p class="muted">Payment: ${order.paymentMethod} . Status: ${order.paymentStatus}</p>
+          <p class="muted">Payment: ${order.paymentMethod} . ${order.paymentStatus}</p>
           <p class="muted">Total: ${money(order.total)}</p>
         </aside>
       </div>
@@ -856,21 +783,16 @@ function VendorPage() {
   const tabs = [["orders", "Incoming Orders"], ["products", "My Products"], ["shops", "My Shops"]];
   return `
     <section class="section">
-      <div class="section-head">
-        <div><h2>Vendor Dashboard</h2></div>
-      </div>
+      <div class="section-head"><div><h2>Vendor Dashboard</h2></div></div>
       ${DashboardStats([
         [vendor.ordersToday ?? 0, "orders today"],
         [money(vendor.dailyRevenue ?? 0), "daily revenue"],
         [vendor.lowStockProducts?.length ?? 0, "low stock items"]
       ])}
-
       <div class="admin-tabs">
         ${tabs.map(([key, label]) => `<button class="${state.vendorTab === key ? "active" : ""}" onclick="setVendorTab('${key}')">${label}</button>`).join("")}
       </div>
-
       ${state.formError ? `<p class="muted" style="color:#c0392b;">${state.formError}</p>` : ""}
-
       ${state.vendorTab === "orders" ? `
         <div class="card checkout-box">
           <h3>Incoming Orders</h3>
@@ -879,7 +801,7 @@ function VendorPage() {
               <div class="line-item">
                 <div>
                   <strong>Order #${o._id.slice(-6)}</strong>
-                  <span class="muted">${o.items.length} items . ${o.paymentMethod} ${o.paymentStatus === "paid" ? "paid" : ""} . ${o.user?.name || ""}</span>
+                  <span class="muted">${o.items.length} items . ${o.paymentMethod} . ${o.user?.name || ""}</span>
                 </div>
                 <div class="upload-row">
                   <span class="status ${o.status === "Delivered" ? "green" : "amber"}">${o.status}</span>
@@ -888,11 +810,10 @@ function VendorPage() {
                   ${o.status === "Packed" ? `<span class="pill">Ready for pickup</span>` : ""}
                 </div>
               </div>
-            `).join("") || `<p class="muted">No orders yet for your shop's products.</p>`}
+            `).join("") || `<p class="muted">No orders yet.</p>`}
           </div>
         </div>
       ` : ""}
-
       ${state.vendorTab === "products" ? `
         <div class="management-grid">
           <div class="card checkout-box">
@@ -912,7 +833,7 @@ function VendorPage() {
               <input name="price" type="number" min="0" class="field" required>
               <label>Stock</label>
               <input name="stock" type="number" min="0" class="field" required>
-              <label>Real product photo</label>
+              <label>Product photo</label>
               <input name="image" type="file" accept="image/*" class="field">
               <button class="primary-button" type="submit">Add Product</button>
             </form>
@@ -924,10 +845,7 @@ function VendorPage() {
                 <div class="line-item">
                   <div class="card-row">
                     <div class="product-image" style="width:48px;height:48px;">${imageTag(p.image, p.letter)}</div>
-                    <div>
-                      <strong>${p.name}</strong>
-                      <span class="muted">${money(p.price)} . ${p.category}</span>
-                    </div>
+                    <div><strong>${p.name}</strong><span class="muted">${money(p.price)} . ${p.category}</span></div>
                   </div>
                   <div class="upload-row">
                     <input type="number" value="${p.stock}" class="field" style="width:80px;" onchange="updateProductStock('${p._id}', this.value)">
@@ -938,7 +856,8 @@ function VendorPage() {
             </div>
           </div>
         </div>
-      ` : `
+      ` : ""}
+      ${state.vendorTab === "shops" ? `
         <div class="management-grid">
           <div class="card checkout-box">
             <h3>Add a Shop</h3>
@@ -951,8 +870,7 @@ function VendorPage() {
               </select>
               <label>Address</label>
               <input name="address" class="field" placeholder="e.g. MG Road, Bengaluru" required>
-              <p class="muted">Address is geocoded automatically using OpenStreetMap to place it on the real map.</p>
-              <label>Real shop photo</label>
+              <label>Shop photo</label>
               <input name="image" type="file" accept="image/*" class="field">
               <button class="primary-button" type="submit">Add Shop</button>
             </form>
@@ -972,7 +890,7 @@ function VendorPage() {
             </div>
           </div>
         </div>
-      `}
+      ` : ""}
     </section>
   `;
 }
@@ -980,7 +898,6 @@ function VendorPage() {
 function DeliveryPage() {
   const active = state.deliveryData?.active;
   const available = state.deliveryData?.available || [];
-
   return `
     <section class="section">
       <div class="section-head">
@@ -1003,7 +920,7 @@ function DeliveryPage() {
               <button class="primary-button" onclick="updateOrderStatus('${active._id}', 'Out for Delivery')">Picked Up</button>
               <button class="ghost-button" onclick="updateOrderStatus('${active._id}', 'Delivered')">Delivered</button>
             </div>
-          ` : `<p class="muted">No active delivery right now. Accept an assignment below.</p>`}
+          ` : `<p class="muted">No active delivery. Accept an assignment below.</p>`}
         </div>
         <div class="card checkout-box">
           <h3>Available Assignments</h3>
@@ -1013,7 +930,7 @@ function DeliveryPage() {
                 <div><strong>Order #${order._id.slice(-6)}</strong><span class="muted">${order.address} . ${money(order.total)}</span></div>
                 <button class="small-button" onclick="acceptAssignment('${order._id}')">Accept</button>
               </div>
-            `).join("") || `<p class="muted">No assignments available right now.</p>`}
+            `).join("") || `<p class="muted">No assignments available.</p>`}
           </div>
         </div>
       </div>
@@ -1024,22 +941,17 @@ function DeliveryPage() {
 function AdminPage() {
   const admin = state.dashboard?.admin || {};
   const tabs = [["users", "Users"], ["shops", "Shops"], ["products", "Products"], ["orders", "Orders"]];
-
   return `
     <section class="section">
-      <div class="section-head">
-        <div><h2>Admin Panel</h2></div>
-      </div>
+      <div class="section-head"><div><h2>Admin Panel</h2></div></div>
       ${DashboardStats([
         [admin.users ?? 0, "registered users"],
         [admin.orders ?? 0, "total orders"],
         [money(admin.gmv ?? 0), "GMV tracked"]
       ])}
-
       <div class="admin-tabs">
         ${tabs.map(([key, label]) => `<button class="${state.adminTab === key ? "active" : ""}" onclick="setAdminTab('${key}')">${label}</button>`).join("")}
       </div>
-
       ${state.adminTab === "users" ? `
         <div class="card checkout-box">
           <h3>All Users (${state.adminUsers.length})</h3>
@@ -1058,7 +970,6 @@ function AdminPage() {
           </div>
         </div>
       ` : ""}
-
       ${state.adminTab === "shops" ? `
         <div class="card checkout-box">
           <h3>All Shops (${state.adminShops.length})</h3>
@@ -1075,7 +986,6 @@ function AdminPage() {
           </div>
         </div>
       ` : ""}
-
       ${state.adminTab === "products" ? `
         <div class="card checkout-box">
           <h3>All Products (${state.adminProducts.length})</h3>
@@ -1092,7 +1002,6 @@ function AdminPage() {
           </div>
         </div>
       ` : ""}
-
       ${state.adminTab === "orders" ? `
         <div class="card checkout-box">
           <h3>All Orders (${state.adminOrders.length})</h3>
@@ -1125,12 +1034,11 @@ function AuthPage() {
       <div class="layout">
         <div>
           <h2>${isLogin ? "Login" : "Create your account"}</h2>
-          <div class="upload-row">
-            <button class="ghost-button"
-onclick="quickLogin('omrajora671@gmail.com','om123')">
-Login as Admin
-</button>
-            <button class="ghost-button" onclick="setAuthMode('register')">New Customer? Register</button>
+          <p class="muted">Login as your role to access the right dashboard.</p>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+            <button class="ghost-button" onclick="loginAs('admin')">Login as Admin</button>
+            <button class="ghost-button" onclick="loginAs('vendor')">Login as Vendor</button>
+            <button class="ghost-button" onclick="loginAs('customer')">Login as Customer</button>
           </div>
         </div>
         <div class="card checkout-box">
@@ -1146,6 +1054,7 @@ Login as Admin
               <label for="password">Password</label>
               <input name="password" id="password" class="field" type="password" required>
               <button class="primary-button" type="submit">Login</button>
+              <button type="button" class="ghost-button" onclick="showForgotPassword()" style="width:100%;margin-top:8px;">Forgot Password?</button>
             </form>
           ` : `
             <form onsubmit="handleRegister(event)">
@@ -1161,7 +1070,6 @@ Login as Admin
                 <option value="vendor" ${state.authRole === "vendor" ? "selected" : ""}>Vendor</option>
                 <option value="delivery" ${state.authRole === "delivery" ? "selected" : ""}>Delivery Partner</option>
               </select>
-              <p class="muted">Admin accounts are created directly in the database (node seed.js), not via public signup, for security.</p>
               <button class="primary-button" type="submit">Create Account</button>
             </form>
           `}
@@ -1174,9 +1082,7 @@ Login as Admin
 function Footer() {
   return `
     <footer class="footer">
-      <div>
-
-      </div>
+      <div></div>
       <button class="ghost-button" onclick="setPage('customer')">Back to Top</button>
     </footer>
   `;
@@ -1185,7 +1091,6 @@ function Footer() {
 function MainPage() {
   const feedback = LoadingOrError();
   if (feedback) return `<div class="app-shell">${Header()}${feedback}</div>`;
-
   const pages = {
     customer: CustomerPage,
     cart: CartPage,
@@ -1195,7 +1100,6 @@ function MainPage() {
     admin: () => RoleGate("admin", AdminPage),
     auth: AuthPage
   };
-
   return `<div class="app-shell">${Header()}${(pages[state.page] || CustomerPage)()}${Footer()}</div>`;
 }
 
@@ -1209,26 +1113,16 @@ function render() {
 function mountMap() {
   const container = document.querySelector("#shops-map");
   if (!container || typeof L === "undefined") return;
-
   const center = state.userLocation || { lat: 12.9756, lng: 77.6094 };
-
-  if (leafletMap) {
-    leafletMap.remove();
-    leafletMap = null;
-  }
-
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
   leafletMap = L.map(container).setView([center.lat, center.lng], 13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(leafletMap);
-
   if (state.userLocation) {
     L.marker([center.lat, center.lng], { title: "You are here" })
-      .addTo(leafletMap)
-      .bindPopup("You are here")
-      .openPopup();
+      .addTo(leafletMap).bindPopup("You are here").openPopup();
   }
-
   state.shops.forEach((shop) => {
     const coords = shop.location?.coordinates;
     if (!coords || (coords[0] === 0 && coords[1] === 0)) return;
