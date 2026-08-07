@@ -197,7 +197,7 @@ function RoleGate(requiredRole, pageBuilder) {
       <section class="section">
         <div class="card checkout-box">
           <h2>${requiredRole.charAt(0).toUpperCase() + requiredRole.slice(1)} access only</h2>
-          <p class="muted">Tumhara account role <strong>${state.user.role}</strong> hai. ${requiredRole} account se login karo.</p>
+          <p class="muted">Your account role is <strong>${state.user.role}</strong>. Please login with a ${requiredRole} account.</p>
           <button class="primary-button" onclick="logout(); setPage('auth');">Switch Account</button>
         </div>
       </section>
@@ -229,12 +229,26 @@ function loginAs(role) {
   setTimeout(() => { document.querySelector("#email")?.focus(); }, 100);
 }
 
-function showForgotPassword() {
+async function showForgotPassword() {
   const email = document.querySelector("#email")?.value || "";
-  alert(email
-    ? `Password reset link bheja jayega ${email} pe.\nAbhi ke liye admin se contact karo: support@localkart.in`
-    : "Pehle apna email daalo, phir Forgot Password click karo."
-  );
+  if (!email) {
+    state.authError = "Enter your email first, then click Forgot Password.";
+    render();
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    state.authError = "";
+    alert(data.message);
+  } catch (err) {
+    state.authError = "Failed to send reset email. Try again.";
+    render();
+  }
 }
 
 async function handleRegister(event) {

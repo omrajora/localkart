@@ -16,6 +16,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes");
 
 connectDB();
 
@@ -23,10 +24,11 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname)); // serves index.html, app.js, styles.css
+app.use(express.static(__dirname));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/auth", forgotPasswordRoutes);
 app.use("/api/shops", shopRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
@@ -40,7 +42,6 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "Local Kart API Running..." });
 });
 
-// Centralized error handler - catches anything that slipped past try/catch in routes
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Something went wrong on the server" });
