@@ -70,6 +70,16 @@ async function api(path, options = {}) {
   if (response.status === 204) return null;
   return response.json();
 }
+async function cancelOrder(orderId) {
+  if (!confirm("Are you sure you want to cancel this order?")) return;
+  try {
+    await api(`/orders/${orderId}/cancel`, { method: "POST" });
+    await loadData();
+    alert("Order cancelled successfully.");
+  } catch (error) {
+    alert(error.message);
+  }
+}
 
 async function apiUpload(path, formData) {
   const headers = {};
@@ -870,12 +880,15 @@ function TrackingPage() {
     <section class="section">
       <div class="section-head"><h2>My Order History</h2></div>
       <div class="table-list">
-        ${state.myOrders.map((o) => `
-          <div class="line-item">
-            <div><strong>#${o._id.slice(-6)}</strong><span class="muted">${money(o.total)} . ${o.paymentMethod}</span></div>
-            <span class="status ${o.status === "Delivered" ? "green" : "amber"}">${o.status}</span>
-          </div>
-        `).join("")}
+       ${state.myOrders.map((o) => `
+  <div class="line-item">
+    <div><strong>#${o._id.slice(-6)}</strong><span class="muted">${money(o.total)} . ${o.paymentMethod}</span></div>
+    <div class="upload-row">
+      <span class="status ${o.status === "Delivered" ? "green" : o.status === "Cancelled" ? "red" : "amber"}">${o.status}</span>
+      ${o.status === "Placed" ? `<button class="small-button" onclick="cancelOrder('${o._id}')">Cancel</button>` : ""}
+    </div>
+  </div>
+`).join("")}
       </div>
     </section>
   `;

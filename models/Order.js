@@ -27,7 +27,7 @@ const orderSchema = new mongoose.Schema(
     razorpayPaymentId: String,
     status: {
       type: String,
-      enum: ["Placed", "Confirmed", "Packed", "Out for Delivery", "Delivered"],
+     enum: ["Placed", "Confirmed", "Packed", "Out for Delivery", "Delivered", "Cancelled"],
       default: "Placed"
     },
     deliveryPartner: { type: String, default: "Not assigned" },

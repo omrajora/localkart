@@ -8,10 +8,9 @@ const router = express.Router();
 
 router.use(protect);
 
-// Store location of "Local Kart" hub - replace with your actual hub address/coords
-const HUB_LOCATION = { lat: 12.9716, lng: 77.5946 }; // Bengaluru MG Road, example default
+const HUB_LOCATION = { lat: 12.9716, lng: 77.5946 };
 
-// POST /api/orders - place an order using current cart, real geocoded distance
+// POST /api/orders - place an order using current cart
 router.post("/", async (req, res) => {
   try {
     const { address, paymentMethod, paymentStatus, razorpayOrderId, razorpayPaymentId } = req.body;
@@ -64,12 +63,12 @@ router.post("/", async (req, res) => {
   }
 });
 
-// GET /api/orders/vendor - orders containing items from this vendor's shops (Incoming Orders panel)
+// GET /api/orders/vendor - orders containing items from this vendor's shops
 router.get("/vendor", authorize("vendor", "admin"), async (req, res) => {
   try {
     const Shop = require("../models/Shop");
     const myShops = await Shop.find({ owner: req.user._id }).select("_id");
-   const shopIds = myShops.map((s) => s._id);
+    const shopIds = myShops.map((s) => s._id);
     const Product = require("../models/Product");
     const myProducts = await Product.find({ shop: { $in: shopIds } }).select("_id");
     const myProductIds = myProducts.map((p) => p._id.toString());
@@ -84,12 +83,12 @@ router.get("/vendor", authorize("vendor", "admin"), async (req, res) => {
   }
 });
 
-// GET /api/orders/delivery - active assignment for this partner + unassigned available orders
+// GET /api/orders/delivery - active assignment + available orders
 router.get("/delivery", authorize("delivery", "admin"), async (req, res) => {
   try {
     const active = await Order.findOne({
       deliveryPartner: req.user.name,
-      status: { $ne: "Delivered" }
+      status: { $nin: ["Delivered", "Cancelled"] }
     }).sort({ createdAt: -1 });
 
     const available = await Order.find({
@@ -103,7 +102,7 @@ router.get("/delivery", authorize("delivery", "admin"), async (req, res) => {
   }
 });
 
-// POST /api/orders/:id/accept - delivery partner accepts an available assignment
+// POST /api/orders/:id/accept - delivery partner accepts assignment
 router.post("/:id/accept", authorize("delivery"), async (req, res) => {
   try {
     const order = await Order.findByIdAndUpdate(
@@ -118,7 +117,30 @@ router.post("/:id/accept", authorize("delivery"), async (req, res) => {
   }
 });
 
-// GET /api/orders/latest - most recent order for the logged-in user
+// POST /api/orders/:id/cancel - customer cancels order (only when status is Placed)
+router.post("/:id/cancel", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (order.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (order.status !== "Placed") {
+      return res.status(400).json({ message: "Order can only be cancelled when status is Placed" });
+    }
+
+    order.status = "Cancelled";
+    await order.save();
+
+    res.json({ message: "Order cancelled successfully", order });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// GET /api/orders/latest - most recent order for logged-in user
 router.get("/latest", async (req, res) => {
   try {
     const order = await Order.findOne({ user: req.user._id }).sort({ createdAt: -1 });
@@ -128,7 +150,7 @@ router.get("/latest", async (req, res) => {
   }
 });
 
-// GET /api/orders - all orders of logged-in user (order history)
+// GET /api/orders - all orders of logged-in user
 router.get("/", async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
@@ -138,11 +160,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-// PATCH /api/orders/:id/status - delivery partner / admin updates order status
+// PATCH /api/orders/:id/status - vendor/delivery/admin updates order status
 router.patch("/:id/status", authorize("delivery", "vendor", "admin"), async (req, res) => {
   try {
     const { status, deliveryPartner } = req.body;
-    const validStatuses = ["Placed", "Confirmed", "Packed", "Out for Delivery", "Delivered"];
+    const validStatuses = ["Placed", "Confirmed", "Packed", "Out for Delivery", "Delivered", "Cancelled"];
 
     if (status && !validStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status value" });
