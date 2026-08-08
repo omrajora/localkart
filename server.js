@@ -16,6 +16,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const reviewRoutes = require("./routes/reviewRoutes"); 
 const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes");
 
 connectDB();
@@ -37,7 +38,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/upload", uploadRoutes);
-
+app.use("/api/reviews", reviewRoutes);  
 app.get("/api/health", (req, res) => {
   res.json({ status: "Local Kart API Running..." });
 });
