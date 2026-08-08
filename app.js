@@ -35,7 +35,8 @@ let state = {
   adminUsers: [],
   adminShops: [],
   adminProducts: [],
-  adminOrders: []
+  adminOrders: [],
+  darkMode: localStorage.getItem("lk_dark") === "true",
 };
 
 const orderSteps = ["Placed", "Confirmed", "Packed", "Out for Delivery", "Delivered"];
@@ -46,7 +47,12 @@ let leafletMap = null;
 function isLoggedIn() {
   return Boolean(state.token && state.user);
 }
-
+function toggleDark() {
+  state.darkMode = !state.darkMode;
+  localStorage.setItem("lk_dark", state.darkMode);
+  document.documentElement.setAttribute("data-theme", state.darkMode ? "dark" : "light");
+  render();
+}
 async function api(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (state.token) headers.Authorization = `Bearer ${state.token}`;
@@ -670,6 +676,7 @@ function Header() {
         ${pages.map(([key, label]) => `<button class="${state.page === key ? "active" : ""}" onclick="setPage('${key}')">${label}</button>`).join("")}
       </nav>
       <div class="top-actions">
+  <button class="ghost-button" onclick="toggleDark()" title="Toggle dark mode">${state.darkMode ? "☀️" : "🌙"}</button>
         ${isLoggedIn()
           ? `<span class="pill">${state.user.name} . ${state.user.role}</span><button class="ghost-button" onclick="logout()">Logout</button>`
           : `<button class="primary-button" onclick="setPage('auth')">Login / Register</button>`}
@@ -1226,6 +1233,9 @@ function mountMap() {
       .addTo(leafletMap)
       .bindPopup(`<strong>${shop.name}</strong><br>${shop.category}<br>${shop.address}`);
   });
+}
+if (state.darkMode) {
+  document.documentElement.setAttribute("data-theme", "dark");
 }
 
 render();

@@ -1,4 +1,48 @@
 :root {
+  --bg: #f5f5f0;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --muted: #666666;
+  --border: #e2e2e2;
+  --green: #1f7a4d;
+}
+
+[data-theme="dark"] {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --text: #f0f0f0;
+  --muted: #999999;
+  --border: #2a2a2a;
+  --green: #2ecc71;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s, color 0.3s;
+}
+
+.card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.field {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+:root {
   --ink: #17201d;
   --muted: #69736f;
   --line: #dce5df;
@@ -11,6 +55,7 @@
   --blue: #2b74c7;
   --violet: #7657c8;
   --shadow: 0 18px 45px rgba(23, 32, 29, 0.11);
+  
 }
 
 * {
