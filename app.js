@@ -342,7 +342,7 @@ async function placeOrder() {
   try {
     const orderData = await api("/payment/create-order", { method: "POST", body: JSON.stringify({ amount: total }) });
     if (typeof Razorpay === "undefined") {
-      state.error = "Razorpay checkout script did not load. Check your internet connection.";
+      state.error = "Razorpay checkout script did not load.";
       render();
       return;
     }
@@ -377,7 +377,7 @@ async function placeOrder() {
     });
     rzp.open();
   } catch (error) {
-    state.error = error.message + " (Add Razorpay test keys in .env to enable online payment, or choose Cash on Delivery.)";
+    state.error = error.message + " (Choose Cash on Delivery if payment gateway is not configured.)";
     render();
   }
 }
@@ -414,6 +414,88 @@ async function updateOrderStatus(orderId, status) {
   } catch (error) {
     state.error = error.message;
     render();
+  }
+}
+
+async function openProduct(productId) {
+  try {
+    const { reviews, avgRating, total } = await api(`/reviews/${productId}`);
+    const product = state.products.find((p) => p._id === productId);
+    if (!product) return;
+
+    const stars = (n) => "★".repeat(Math.round(n)) + "☆".repeat(5 - Math.round(n));
+
+    const modal = document.createElement("div");
+    modal.id = "product-modal";
+    modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;";
+    modal.innerHTML = `
+      <div style="background:white;border-radius:16px;padding:24px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="margin:0;">${product.name}</h2>
+          <button onclick="document.getElementById('product-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;">×</button>
+        </div>
+        <div class="product-image" style="height:180px;margin-bottom:16px;">${imageTag(product.image, product.letter)}</div>
+        <p><strong>${money(product.price)}</strong> . ${product.stock} left . ${product.category}</p>
+        <p class="muted">${product.shop?.name || ""}</p>
+        ${avgRating ? `<p><strong>${stars(avgRating)} ${avgRating}</strong> (${total} reviews)</p>` : `<p class="muted">No reviews yet.</p>`}
+        <button class="primary-button" onclick="document.getElementById('product-modal').remove(); addToCart('${product._id}');" style="margin:12px 0;">Add to Cart</button>
+        <hr>
+        <h3>Reviews</h3>
+        ${reviews.map((r) => `
+          <div style="border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;">
+              <strong>${r.name}</strong>
+              <span style="color:#f5a623;">${stars(r.rating)}</span>
+            </div>
+            <p style="margin:4px 0;color:#555;">${r.comment}</p>
+            <p style="margin:0;font-size:12px;color:#999;">${new Date(r.createdAt).toLocaleDateString()}</p>
+          </div>
+        `).join("") || "<p class='muted'>No reviews yet. Be the first to review!</p>"}
+        ${isLoggedIn() && state.user.role === "customer" ? `
+          <hr>
+          <h3>Write a Review</h3>
+          <p class="muted" style="font-size:13px;">Only available after your order is delivered.</p>
+          <div id="review-error" style="color:#c0392b;font-size:13px;margin-bottom:8px;"></div>
+          <label>Rating</label>
+          <select id="review-rating" class="field">
+            <option value="5">★★★★★ Excellent</option>
+            <option value="4">★★★★☆ Good</option>
+            <option value="3">★★★☆☆ Average</option>
+            <option value="2">★★☆☆☆ Poor</option>
+            <option value="1">★☆☆☆☆ Terrible</option>
+          </select>
+          <label>Comment</label>
+          <textarea id="review-comment" class="field" rows="3" placeholder="Share your experience..." style="resize:vertical;"></textarea>
+          <button class="primary-button" onclick="submitReview('${product._id}')">Submit Review</button>
+        ` : ""}
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+  } catch (error) {
+    alert("Could not load product details.");
+  }
+}
+
+async function submitReview(productId) {
+  const rating = document.querySelector("#review-rating")?.value;
+  const comment = document.querySelector("#review-comment")?.value;
+  const errorDiv = document.querySelector("#review-error");
+
+  if (!comment?.trim()) {
+    if (errorDiv) errorDiv.textContent = "Please write a comment.";
+    return;
+  }
+
+  try {
+    await api(`/reviews/${productId}`, {
+      method: "POST",
+      body: JSON.stringify({ rating: Number(rating), comment })
+    });
+    document.getElementById("product-modal")?.remove();
+    alert("Review submitted successfully!");
+  } catch (error) {
+    if (errorDiv) errorDiv.textContent = error.message;
   }
 }
 
@@ -645,7 +727,7 @@ function CustomerPage() {
       ` : `
         <div class="grid">
           ${nearby.map((shop) => `
-          <article class="card product-card" onclick="openProduct('${product._id}')" style="cursor:pointer;">
+            <article class="card shop-card">
               <div class="shop-image">${imageTag(shop.image, shop.letter)}</div>
               <div class="card-row">
                 <div>
@@ -686,14 +768,14 @@ function CustomerPage() {
           ${filteredProducts().length === 0 ? `
             <div class="card checkout-box"><h3>No products match</h3><p class="muted">Try a different category or search term.</p></div>
           ` : filteredProducts().map((product) => `
-            <article class="card product-card">
+            <article class="card product-card" onclick="openProduct('${product._id}')" style="cursor:pointer;">
               <div class="product-image">${imageTag(product.image, product.letter)}</div>
               <div><strong>${product.name}</strong><span>${product.shop?.name || ""}</span></div>
               <div class="card-row">
                 <strong>${money(product.price)}</strong>
                 <span class="pill">${product.stock} left</span>
               </div>
-              <button class="primary-button" onclick="addToCart('${product._id}')">Add to Cart</button>
+              <button class="primary-button" onclick="event.stopPropagation(); addToCart('${product._id}')">Add to Cart</button>
             </article>
           `).join("")}
         </div>
@@ -791,87 +873,7 @@ function TrackingPage() {
     </section>
   `;
 }
-async function openProduct(productId) {
-  try {
-    const { reviews, avgRating, total } = await api(`/reviews/${productId}`);
-    const product = state.products.find((p) => p._id === productId);
-    if (!product) return;
 
-    const stars = (n) => "★".repeat(Math.round(n)) + "☆".repeat(5 - Math.round(n));
-
-    const modal = document.createElement("div");
-    modal.id = "product-modal";
-    modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;";
-    modal.innerHTML = `
-      <div style="background:white;border-radius:16px;padding:24px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <h2 style="margin:0;">${product.name}</h2>
-          <button onclick="document.getElementById('product-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;">×</button>
-        </div>
-        <div class="product-image" style="height:180px;margin-bottom:16px;">${imageTag(product.image, product.letter)}</div>
-        <p><strong>${money(product.price)}</strong> . ${product.stock} left . ${product.category}</p>
-        <p class="muted">${product.shop?.name || ""}</p>
-        ${avgRating ? `<p><strong>${stars(avgRating)} ${avgRating}</strong> (${total} reviews)</p>` : `<p class="muted">No reviews yet.</p>`}
-        <button class="primary-button" onclick="document.getElementById('product-modal').remove(); addToCart('${product._id}');" style="margin:12px 0;">Add to Cart</button>
-        <hr>
-        <h3>Reviews</h3>
-        ${reviews.map((r) => `
-          <div style="border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:8px;">
-            <div style="display:flex;justify-content:space-between;">
-              <strong>${r.name}</strong>
-              <span style="color:#f5a623;">${stars(r.rating)}</span>
-            </div>
-            <p style="margin:4px 0;color:#555;">${r.comment}</p>
-            <p style="margin:0;font-size:12px;color:#999;">${new Date(r.createdAt).toLocaleDateString()}</p>
-          </div>
-        `).join("") || ""}
-        ${isLoggedIn() && state.user.role === "customer" ? `
-          <hr>
-          <h3>Write a Review</h3>
-          <p class="muted" style="font-size:13px;">Only available after your order is delivered.</p>
-          <div id="review-error" style="color:#c0392b;font-size:13px;margin-bottom:8px;"></div>
-          <label>Rating</label>
-          <select id="review-rating" class="field">
-            <option value="5">★★★★★ Excellent</option>
-            <option value="4">★★★★☆ Good</option>
-            <option value="3">★★★☆☆ Average</option>
-            <option value="2">★★☆☆☆ Poor</option>
-            <option value="1">★☆☆☆☆ Terrible</option>
-          </select>
-          <label>Comment</label>
-          <textarea id="review-comment" class="field" rows="3" placeholder="Share your experience..." style="resize:vertical;"></textarea>
-          <button class="primary-button" onclick="submitReview('${product._id}')">Submit Review</button>
-        ` : ""}
-      </div>
-    `;
-    document.body.appendChild(modal);
-    modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
-  } catch (error) {
-    alert("Could not load product details.");
-  }
-}
-
-async function submitReview(productId) {
-  const rating = document.querySelector("#review-rating")?.value;
-  const comment = document.querySelector("#review-comment")?.value;
-  const errorDiv = document.querySelector("#review-error");
-
-  if (!comment?.trim()) {
-    if (errorDiv) errorDiv.textContent = "Please write a comment.";
-    return;
-  }
-
-  try {
-    await api(`/reviews/${productId}`, {
-      method: "POST",
-      body: JSON.stringify({ rating: Number(rating), comment })
-    });
-    document.getElementById("product-modal")?.remove();
-    alert("Review submitted successfully!");
-  } catch (error) {
-    if (errorDiv) errorDiv.textContent = error.message;
-  }
-}
 function VendorPage() {
   const vendor = state.dashboard?.vendor || {};
   const tabs = [["orders", "Incoming Orders"], ["products", "My Products"], ["shops", "My Shops"]];
