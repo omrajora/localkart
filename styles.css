@@ -15,6 +15,52 @@
   --border: #2a2a2a;
   --green: #2ecc71;
 }
+[data-theme="dark"] .card,
+[data-theme="dark"] .checkout-box,
+[data-theme="dark"] .topbar,
+[data-theme="dark"] .sidebar,
+[data-theme="dark"] .line-item,
+[data-theme="dark"] .hero,
+[data-theme="dark"] .section,
+[data-theme="dark"] .filters button,
+[data-theme="dark"] .admin-tabs button,
+[data-theme="dark"] .segmented button {
+  background: #1a1a1a;
+  color: #f0f0f0;
+  border-color: #2a2a2a;
+}
+
+[data-theme="dark"] .ghost-button {
+  color: #f0f0f0;
+  border-color: #444;
+}
+
+[data-theme="dark"] .muted {
+  color: #999;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: #2a2a2a;
+  color: #f0f0f0;
+  border-color: #444;
+}
+
+[data-theme="dark"] .pill {
+  background: #2a2a2a;
+  color: #f0f0f0;
+}
+
+[data-theme="dark"] .footer {
+  background: #111;
+  color: #f0f0f0;
+}
+
+[data-theme="dark"] body {
+  background: #0f0f0f;
+  color: #f0f0f0;
+}
 
 body {
   background: var(--bg);
