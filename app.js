@@ -1255,3 +1255,6 @@ if (state.darkMode) {
 render();
 loadData();
 requestLocation();
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
