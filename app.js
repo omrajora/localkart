@@ -1152,9 +1152,10 @@ function AuthPage() {
           <h2>${isLogin ? "Login" : "Create your account"}</h2>
           <p class="muted">Login as your role to access the right dashboard.</p>
           <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
-            <button class="ghost-button" onclick="loginAs('admin')">Login as Admin</button>
-            <button class="ghost-button" onclick="loginAs('vendor')">Login as Vendor</button>
-            <button class="ghost-button" onclick="loginAs('customer')">Login as Customer</button>
+           <button class="ghost-button" onclick="loginAs('admin')">Login as Admin</button>
+<button class="ghost-button" onclick="loginAs('vendor')">Login as Vendor</button>
+<button class="ghost-button" onclick="loginAs('delivery')">Login as Delivery Partner</button>
+<button class="ghost-button" onclick="loginAs('customer')">Login as Customer</button>
           </div>
         </div>
         <div class="card checkout-box">
