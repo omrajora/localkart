@@ -1011,10 +1011,11 @@ function VendorPage() {
                     <div class="shop-image" style="width:48px;height:48px;">${imageTag(s.image, s.letter)}</div>
                   <div><strong>${s.name}</strong><span class="muted">${s.address}</span></div>
               </div>
-              <div class="upload-row">
+             <div class="upload-row">
                 <span class="pill">${s.rating}</span>
                 <button class="small-button" onclick="deleteShop('${s._id}')">Delete</button>
               </div>
+            </div>
               `).join("") || `<p class="muted">No shops yet.</p>`}
             </div>
           </div>
