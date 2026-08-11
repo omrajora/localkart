@@ -221,6 +221,16 @@ function RoleGate(requiredRole, pageBuilder) {
   }
   return pageBuilder();
 }
+async function deleteShop(shopId) {
+  if (!confirm("Delete this shop and all its products?")) return;
+  try {
+    await api(`/shops/${shopId}`, { method: "DELETE" });
+    await loadData();
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
+}
 
 function setCategory(category) { state.category = category; render(); }
 
@@ -244,6 +254,7 @@ function loginAs(role) {
   render();
   setTimeout(() => { document.querySelector("#email")?.focus(); }, 100);
 }
+
 
 async function showForgotPassword() {
   const email = document.querySelector("#email")?.value || "";
@@ -998,10 +1009,12 @@ function VendorPage() {
                 <div class="line-item">
                   <div class="card-row">
                     <div class="shop-image" style="width:48px;height:48px;">${imageTag(s.image, s.letter)}</div>
-                    <div><strong>${s.name}</strong><span class="muted">${s.address}</span></div>
-                  </div>
-                  <span class="pill">${s.rating}</span>
-                </div>
+                  <div><strong>${s.name}</strong><span class="muted">${s.address}</span></div>
+              </div>
+              <div class="upload-row">
+                <span class="pill">${s.rating}</span>
+                <button class="small-button" onclick="deleteShop('${s._id}')">Delete</button>
+              </div>
               `).join("") || `<p class="muted">No shops yet.</p>`}
             </div>
           </div>
