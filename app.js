@@ -1006,17 +1006,17 @@ function VendorPage() {
             <h3>My Shops</h3>
             <div class="table-list">
               ${state.myShops.map((s) => `
-                <div class="line-item">
-                  <div class="card-row">
-                    <div class="shop-image" style="width:48px;height:48px;">${imageTag(s.image, s.letter)}</div>
-                  <div><strong>${s.name}</strong><span class="muted">${s.address}</span></div>
-              </div>
-             <div class="upload-row">
-                <span class="pill">${s.rating}</span>
-                <button class="small-button" onclick="deleteShop('${s._id}')">Delete</button>
-              </div>
-            </div>
-              `).join("") || `<p class="muted">No shops yet.</p>`}
+  <div class="line-item">
+    <div class="card-row">
+      <div class="shop-image" style="width:48px;height:48px;">${imageTag(s.image, s.letter)}</div>
+      <div><strong>${s.name}</strong><span class="muted">${s.address}</span></div>
+    </div>
+    <div class="upload-row">
+      <span class="pill">${s.rating}</span>
+      <button class="small-button" onclick="deleteShop('${s._id}')">Delete</button>
+    </div>
+  </div>
+`).join("") || `<p class="muted">No shops yet.</p>`}
             </div>
           </div>
         </div>

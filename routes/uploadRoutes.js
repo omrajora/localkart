@@ -7,7 +7,7 @@ const router = express.Router();
 // POST /api/upload - vendor/admin upload a real image, get back a usable URL
 router.post("/", protect, authorize("vendor", "admin"), upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ message: "No image file received" });
-  res.json({ url: `/uploads/${req.file.filename}` });
+  res.json({ url: req.file.path }); // Cloudinary gives full URL in req.file.path
 });
 
 module.exports = router;
