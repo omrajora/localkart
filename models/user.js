@@ -21,7 +21,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["customer", "vendor", "delivery", "admin"],
     default: "customer"
-  }
+  },
+  googleId: { type: String }
 });
 
 module.exports = mongoose.model("User", userSchema);

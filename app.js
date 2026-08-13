@@ -1173,6 +1173,10 @@ function AuthPage() {
           </div>
         </div>
         <div class="card checkout-box">
+        <button type="button" class="primary-button" onclick="window.location.href='/auth/google'" style="background:#4285f4;margin-bottom:12px;width:100%;">
+  🔵 Continue with Google
+</button>
+<hr>
           <div class="segmented">
             <button class="${isLogin ? "active" : ""}" onclick="setAuthMode('login')">Login</button>
             <button class="${!isLogin ? "active" : ""}" onclick="setAuthMode('register')">Register</button>
@@ -1267,6 +1271,18 @@ if (state.darkMode) {
 }
 
 render();
+// Handle Google OAuth redirect token
+const urlParams = new URLSearchParams(window.location.search);
+const googleToken = urlParams.get("token");
+const googleUser = urlParams.get("user");
+if (googleToken && googleUser) {
+  state.token = googleToken;
+  state.user = JSON.parse(decodeURIComponent(googleUser));
+  localStorage.setItem("lk_token", googleToken);
+  localStorage.setItem("lk_user", JSON.stringify(state.user));
+  window.history.replaceState({}, document.title, "/");
+  loadData();
+}
 loadData();
 requestLocation();
 if ("serviceWorker" in navigator) {

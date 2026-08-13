@@ -4,6 +4,9 @@ const dotenv = require("dotenv");
 const path = require("path");
 
 dotenv.config(); // must run before requiring any route that reads process.env at load time (e.g. paymentRoutes)
+const session = require("express-session");
+const passport = require("./config/passport");
+const googleAuthRoutes = require("./routes/googleAuthRoutes");
 
 const connectDB = require("./config/db");
 
@@ -27,7 +30,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
+app.use(session({ secret: process.env.SESSION_SECRET, resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use("/auth", googleAuthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", forgotPasswordRoutes);
 app.use("/api/shops", shopRoutes);
