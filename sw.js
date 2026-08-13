@@ -1,4 +1,4 @@
-const CACHE_NAME = "localkart-v1";
+const CACHE_NAME = "localkart-v2";
 const STATIC_ASSETS = ["/", "/app.js", "/styles.css", "/index.html"];
 
 self.addEventListener("install", (event) => {
