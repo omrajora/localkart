@@ -1269,8 +1269,14 @@ function mountMap() {
 if (state.darkMode) {
   document.documentElement.setAttribute("data-theme", "dark");
 }
-
 render();
+loadData();
+requestLocation();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+
 // Handle Google OAuth redirect token
 const urlParams = new URLSearchParams(window.location.search);
 const googleToken = urlParams.get("token");
@@ -1282,9 +1288,4 @@ if (googleToken && googleUser) {
   localStorage.setItem("lk_user", JSON.stringify(state.user));
   window.history.replaceState({}, document.title, "/");
   loadData();
-}
-loadData();
-requestLocation();
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js").catch(() => {});
 }
