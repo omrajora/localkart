@@ -4,6 +4,19 @@ const dotenv = require("dotenv");
 const path = require("path");
 
 dotenv.config(); // must run before requiring any route that reads process.env at load time (e.g. paymentRoutes)
+const rateLimit = require("express-rate-limit");
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: "Too many requests, please try again after 15 minutes." }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: "Too many login attempts, please try again after 15 minutes." }
+});
 const session = require("express-session");
 const passport = require("./config/passport");
 const googleAuthRoutes = require("./routes/googleAuthRoutes");
@@ -46,6 +59,9 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/reviews", reviewRoutes); 
 app.use("/api/chat", chatRoutes); 
+app.use("/api/", limiter);
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
 app.get("/api/health", (req, res) => {
   res.json({ status: "Local Kart API Running..." });
 });
