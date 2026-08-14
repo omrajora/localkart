@@ -36,6 +36,9 @@ let state = {
   adminShops: [],
   adminProducts: [],
   adminOrders: [],
+  chatOpen: false,
+chatMessages: [],
+chatLoading: false,
   darkMode: localStorage.getItem("lk_dark") === "true",
 };
 
@@ -221,6 +224,49 @@ function RoleGate(requiredRole, pageBuilder) {
   }
   return pageBuilder();
 }
+function toggleChat() {
+  state.chatOpen = !state.chatOpen;
+  render();
+  if (state.chatOpen) {
+    setTimeout(() => document.querySelector("#chat-input")?.focus(), 100);
+  }
+}
+
+async function sendChat() {
+  const input = document.querySelector("#chat-input");
+  const message = input?.value?.trim();
+  if (!message) return;
+
+  state.chatMessages.push({ role: "user", text: message });
+  state.chatLoading = true;
+  input.value = "";
+  render();
+
+  try {
+    const res = await fetch(`${API_BASE}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, context: `User is on ${state.page} page` })
+    });
+    const data = await res.json();
+    state.chatMessages.push({ role: "bot", text: data.reply });
+  } catch (error) {
+    state.chatMessages.push({ role: "bot", text: "Sorry, something went wrong. Please try again." });
+  }
+
+  state.chatLoading = false;
+  render();
+  setTimeout(() => {
+    const msgs = document.querySelector("#chat-messages");
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+    document.querySelector("#chat-input")?.focus();
+  }, 100);
+}
+
+function chatKeyPress(event) {
+  if (event.key === "Enter") sendChat();
+}
+
 async function deleteShop(shopId) {
   if (!confirm("Delete this shop and all its products?")) return;
   try {
@@ -1213,13 +1259,55 @@ function AuthPage() {
     </section>
   `;
 }
-
 function Footer() {
   return `
     <footer class="footer">
       <div></div>
       <button class="ghost-button" onclick="setPage('customer')">Back to Top</button>
     </footer>
+
+    <!-- Chatbot -->
+    <div style="position:fixed;bottom:24px;right:24px;z-index:9998;">
+      ${state.chatOpen ? `
+        <div style="background:white;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:320px;height:420px;display:flex;flex-direction:column;margin-bottom:12px;overflow:hidden;">
+          <div style="background:#1f7a4d;color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong>Local Kart Assistant</strong>
+              <p style="margin:0;font-size:12px;opacity:0.8;">Powered by Gemini AI</p>
+            </div>
+            <button onclick="toggleChat()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">×</button>
+          </div>
+          <div id="chat-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;">
+            ${state.chatMessages.length === 0 ? `
+              <div style="background:#f0f9f4;border-radius:12px;padding:12px;font-size:14px;color:#1f7a4d;">
+                👋 Hi! I'm your Local Kart assistant. Ask me anything about shops, products, orders, or delivery!
+              </div>
+            ` : ""}
+            ${state.chatMessages.map((msg) => `
+              <div style="display:flex;justify-content:${msg.role === "user" ? "flex-end" : "flex-start"};">
+                <div style="max-width:80%;background:${msg.role === "user" ? "#1f7a4d" : "#f0f0f0"};color:${msg.role === "user" ? "white" : "#1a1a1a"};padding:10px 14px;border-radius:${msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px"};font-size:14px;line-height:1.4;">
+                  ${msg.text}
+                </div>
+              </div>
+            `).join("")}
+            ${state.chatLoading ? `
+              <div style="display:flex;justify-content:flex-start;">
+                <div style="background:#f0f0f0;padding:10px 14px;border-radius:16px 16px 16px 4px;font-size:14px;color:#666;">
+                  Typing...
+                </div>
+              </div>
+            ` : ""}
+          </div>
+          <div style="padding:12px;border-top:1px solid #eee;display:flex;gap:8px;">
+            <input id="chat-input" class="field" placeholder="Ask anything..." onkeypress="chatKeyPress(event)" style="flex:1;margin:0;">
+            <button onclick="sendChat()" class="primary-button" style="padding:10px 16px;">Send</button>
+          </div>
+        </div>
+      ` : ""}
+      <button onclick="toggleChat()" style="background:#1f7a4d;color:white;border:none;width:56px;height:56px;border-radius:50%;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(31,122,77,0.4);display:flex;align-items:center;justify-content:center;">
+        ${state.chatOpen ? "×" : "💬"}
+      </button>
+    </div>
   `;
 }
 

@@ -7,6 +7,7 @@ dotenv.config(); // must run before requiring any route that reads process.env a
 const session = require("express-session");
 const passport = require("./config/passport");
 const googleAuthRoutes = require("./routes/googleAuthRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 const connectDB = require("./config/db");
 
@@ -43,7 +44,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/upload", uploadRoutes);
-app.use("/api/reviews", reviewRoutes);  
+app.use("/api/reviews", reviewRoutes); 
+app.use("/api/chat", chatRoutes); 
 app.get("/api/health", (req, res) => {
   res.json({ status: "Local Kart API Running..." });
 });
