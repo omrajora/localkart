@@ -863,3 +863,131 @@ h3 {
     min-height: 520px;
   }
 }
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    display: flex;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+
+  .nav button {
+    white-space: nowrap;
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+
+  .top-actions {
+    font-size: 13px;
+  }
+
+  .top-actions .pill {
+    display: none;
+  }
+
+  .hero {
+    flex-direction: column;
+    padding: 24px 16px;
+  }
+
+  .hero-copy h1 {
+    font-size: 2rem;
+  }
+
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .order-panel {
+    flex-direction: column;
+  }
+
+  .management-grid {
+    flex-direction: column;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .map-container {
+    height: 200px;
+  }
+
+  .section {
+    padding: 16px 12px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .checkout-box {
+    width: 100%;
+  }
+
+  .line-item {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .upload-row {
+    flex-wrap: wrap;
+  }
+
+  .admin-tabs {
+    flex-wrap: wrap;
+  }
+
+  .filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+
+  .filters button {
+    white-space: nowrap;
+  }
+
+  /* Chatbot mobile */
+  #chat-widget {
+    bottom: 16px;
+    right: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy h1 {
+    font-size: 1.6rem;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .top-actions button {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
