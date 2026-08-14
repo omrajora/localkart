@@ -12,8 +12,7 @@ router.post("/", async (req, res) => {
 
     if (!message) return res.status(400).json({ message: "Message is required" });
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+ const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const systemPrompt = `You are a helpful customer support assistant for "Local Kart" - a hyperlocal marketplace that connects customers with nearby local shops.
 
 About Local Kart:
